@@ -71,7 +71,6 @@ public struct Vector4<T> : IFloatingPointVector<Vector4<T>, T>
 
     #region Constants
 
-
     public static Vector4<T> Down { get; } = new(T.Zero, T.NegativeOne, T.Zero, T.Zero);
 
     public static Vector4<T> Left { get; } = new(T.NegativeOne, T.Zero, T.Zero, T.Zero);
@@ -374,12 +373,30 @@ public struct Vector4<T> : IFloatingPointVector<Vector4<T>, T>
         return left + right;
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector4<T> ComponentDivide(Vector4<T> left, Vector4<T> right) {
-        return new(left.X / right.X, left.Y / right.Y, left.Z / right.Z, left.W / right.W);
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Unsafe.BitCast<Vector256<double>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector256<double>>(left) / Unsafe.BitCast<Vector4<T>, Vector256<double>>(right));
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Unsafe.BitCast<Vector128<float>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector128<float>>(left) / Unsafe.BitCast<Vector4<T>, Vector128<float>>(right));
+            }
+        else {
+            return new(left.X / right.X, left.Y / right.Y, left.Z / right.Z, left.W / right.W);
+            }
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector4<T> ComponentMultiply(Vector4<T> left, Vector4<T> right) {
-        return new(left.X * right.X, left.Y * right.Y, left.Z * right.Z, left.W * right.W);
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Unsafe.BitCast<Vector256<double>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector256<double>>(left) * Unsafe.BitCast<Vector4<T>, Vector256<double>>(right));
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Unsafe.BitCast<Vector128<float>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector128<float>>(left) * Unsafe.BitCast<Vector4<T>, Vector128<float>>(right));
+            }
+        else {
+            return new(left.X * right.X, left.Y * right.Y, left.Z * right.Z, left.W * right.W);
+            }
         }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -387,80 +404,198 @@ public struct Vector4<T> : IFloatingPointVector<Vector4<T>, T>
         return new(tuple.X, tuple.Y, tuple.Z, tuple.W);
         }
 
-    public static Vector4<T> operator -(Vector4<T> a, Vector4<T> b) {
-        return new(a.X - b.X, a.Y - b.Y, a.Z - b.Z, a.W - b.W);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector4<T> operator -(Vector4<T> left, Vector4<T> right) {
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Unsafe.BitCast<Vector256<double>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector256<double>>(left) - Unsafe.BitCast<Vector4<T>, Vector256<double>>(right));
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Unsafe.BitCast<Vector128<float>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector128<float>>(left) - Unsafe.BitCast<Vector4<T>, Vector128<float>>(right));
+            }
+        else {
+            return new(left.X - right.X, left.Y - right.Y, left.Z - right.Z, left.W - right.W);
+            }
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector4<T> operator -(Vector4<T> vector, T value) {
-        return new(vector.X - value, vector.Y - value, vector.Z - value, vector.W - value);
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Unsafe.BitCast<Vector256<double>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector256<double>>(vector) - Vector256.Create(value).AsDouble());
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Unsafe.BitCast<Vector128<float>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector128<float>>(vector) - Vector128.Create(value).AsSingle());
+            }
+        else {
+            return new(vector.X - value, vector.Y - value, vector.Z - value, vector.W - value);
+            }
         }
 
-    public static Vector4<T> operator -(Vector4<T> a) {
-        return new(-a.X, -a.Y, -a.Z, -a.W);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector4<T> operator -(Vector4<T> vector) {
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Unsafe.BitCast<Vector256<double>, Vector4<T>>(Vector256.Xor(Unsafe.BitCast<Vector4<T>, Vector256<double>>(vector), Vector256.Create(double.NegativeZero)));
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Unsafe.BitCast<Vector128<float>, Vector4<T>>(Vector128.Xor(Unsafe.BitCast<Vector4<T>, Vector128<float>>(vector), Vector128.Create(float.NegativeZero)));
+            }
+        else {
+            return new(-vector.X, -vector.Y, -vector.Z, -vector.W);
+            }
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator !=(Vector4<T> left, Vector4<T> right) {
-        return left.Equals(right) == false;
+        return (left == right) == false;
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector4<T> operator *(T value, Vector4<T> vector) {
-        return new(vector.X * value, vector.Y * value, vector.Z * value, vector.W * value);
+        return vector * value;
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector4<T> operator *(Vector4<T> vector, T value) {
-        return new(vector.X * value, vector.Y * value, vector.Z * value, vector.W * value);
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Unsafe.BitCast<Vector256<double>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector256<double>>(vector) * Vector256.Create(value).AsDouble());
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Unsafe.BitCast<Vector128<float>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector128<float>>(vector) * Vector128.Create(value).AsSingle());
+            }
+        else {
+            return new(vector.X * value, vector.Y * value, vector.Z * value, vector.W * value);
+            }
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector4<T> operator /(T value, Vector4<T> vector) {
-        return new(value / vector.X, value / vector.Y, value / vector.Z, value / vector.W);
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Unsafe.BitCast<Vector256<double>, Vector4<T>>(Vector256.Create(value).AsDouble() / Unsafe.BitCast<Vector4<T>, Vector256<double>>(vector));
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Unsafe.BitCast<Vector128<float>, Vector4<T>>(Vector128.Create(value).AsSingle() / Unsafe.BitCast<Vector4<T>, Vector128<float>>(vector));
+            }
+        else {
+            return new(value / vector.X, value / vector.Y, value / vector.Z, value / vector.W);
+            }
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector4<T> operator /(Vector4<T> vector, T value) {
-        return new(vector.X / value, vector.Y / value, vector.Z / value, vector.W / value);
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Unsafe.BitCast<Vector256<double>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector256<double>>(vector) / Vector256.Create(value).AsDouble());
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Unsafe.BitCast<Vector128<float>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector128<float>>(vector) / Vector128.Create(value).AsSingle());
+            }
+        else {
+            return new(vector.X / value, vector.Y / value, vector.Z / value, vector.W / value);
+            }
         }
 
-    public static Vector4<T> operator +(Vector4<T> a, Vector4<T> b) {
-        return new(a.X + b.X, a.Y + b.Y, a.Z + b.Z, a.W + b.W);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector4<T> operator +(Vector4<T> left, Vector4<T> right) {
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Unsafe.BitCast<Vector256<double>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector256<double>>(left) + Unsafe.BitCast<Vector4<T>, Vector256<double>>(right));
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Unsafe.BitCast<Vector128<float>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector128<float>>(left) + Unsafe.BitCast<Vector4<T>, Vector128<float>>(right));
+            }
+        else {
+            return new(left.X + right.X, left.Y + right.Y, left.Z + right.Z, left.W + right.W);
+            }
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector4<T> operator +(Vector4<T> vector, T value) {
-        return new(vector.X + value, vector.Y + value, vector.Z + value, vector.W + value);
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Unsafe.BitCast<Vector256<double>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector256<double>>(vector) + Vector256.Create(value).AsDouble());
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Unsafe.BitCast<Vector128<float>, Vector4<T>>(Unsafe.BitCast<Vector4<T>, Vector128<float>>(vector) + Vector128.Create(value).AsSingle());
+            }
+        else {
+            return new(vector.X + value, vector.Y + value, vector.Z + value, vector.W + value);
+            }
         }
 
-    [BunnyAttributes.SIMDCandidate]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator <(in Vector4<T> left, in Vector4<T> right) {
-        return left.X < right.X
-            && left.Y < right.Y
-            && left.Z < right.Z
-            && left.W < right.W;
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Vector256.LessThanAll(Unsafe.BitCast<Vector4<T>, Vector256<double>>(left), Unsafe.BitCast<Vector4<T>, Vector256<double>>(right));
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Vector128.LessThanAll(Unsafe.BitCast<Vector4<T>, Vector128<float>>(left), Unsafe.BitCast<Vector4<T>, Vector128<float>>(right));
+            }
+        else {
+            return left.X < right.X
+                && left.Y < right.Y
+                && left.Z < right.Z
+                && left.W < right.W;
+            }
         }
 
-    [BunnyAttributes.SIMDCandidate]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator <=(in Vector4<T> left, in Vector4<T> right) {
-        return left.X <= right.X
-            && left.Y <= right.Y
-            && left.Z <= right.Z
-            && left.W <= right.W;
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Vector256.LessThanOrEqualAll(Unsafe.BitCast<Vector4<T>, Vector256<double>>(left), Unsafe.BitCast<Vector4<T>, Vector256<double>>(right));
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Vector128.LessThanOrEqualAll(Unsafe.BitCast<Vector4<T>, Vector128<float>>(left), Unsafe.BitCast<Vector4<T>, Vector128<float>>(right));
+            }
+        else {
+            return left.X <= right.X
+                && left.Y <= right.Y
+                && left.Z <= right.Z
+                && left.W <= right.W;
+            }
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(Vector4<T> left, Vector4<T> right) {
-        return left.Equals(right);
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Vector256.EqualsAll(Unsafe.BitCast<Vector4<T>, Vector256<double>>(left), Unsafe.BitCast<Vector4<T>, Vector256<double>>(right));
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Vector128.EqualsAll(Unsafe.BitCast<Vector4<T>, Vector128<float>>(left), Unsafe.BitCast<Vector4<T>, Vector128<float>>(right));
+            }
+        else {
+            return left.X == right.X
+                && left.Y == right.Y
+                && left.Z == right.Z
+                && left.W == right.W;
+            }
         }
 
-    [BunnyAttributes.SIMDCandidate]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator >(in Vector4<T> left, in Vector4<T> right) {
-        return left.X > right.X
-            && left.Y > right.Y
-            && left.Z > right.Z
-            && left.W > right.W;
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Vector256.GreaterThanAll(Unsafe.BitCast<Vector4<T>, Vector256<double>>(left), Unsafe.BitCast<Vector4<T>, Vector256<double>>(right));
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Vector128.GreaterThanAll(Unsafe.BitCast<Vector4<T>, Vector128<float>>(left), Unsafe.BitCast<Vector4<T>, Vector128<float>>(right));
+            }
+        else {
+            return left.X > right.X
+                && left.Y > right.Y
+                && left.Z > right.Z
+                && left.W > right.W;
+            }
         }
 
-    [BunnyAttributes.SIMDCandidate]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator >=(in Vector4<T> left, in Vector4<T> right) {
-        return left.X >= right.X
-            && left.Y >= right.Y
-            && left.Z >= right.Z
-            && left.W >= right.W;
+        if (Vector256.IsHardwareAccelerated && Vector256<T>.IsSupported && typeof(T) == typeof(double)) {
+            return Vector256.GreaterThanOrEqualAll(Unsafe.BitCast<Vector4<T>, Vector256<double>>(left), Unsafe.BitCast<Vector4<T>, Vector256<double>>(right));
+            }
+        else if (Vector128.IsHardwareAccelerated && Vector128<T>.IsSupported && typeof(T) == typeof(float)) {
+            return Vector128.GreaterThanOrEqualAll(Unsafe.BitCast<Vector4<T>, Vector128<float>>(left), Unsafe.BitCast<Vector4<T>, Vector128<float>>(right));
+            }
+        else {
+            return left.X >= right.X
+                && left.Y >= right.Y
+                && left.Z >= right.Z
+                && left.W >= right.W;
+            }
         }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -473,20 +608,26 @@ public struct Vector4<T> : IFloatingPointVector<Vector4<T>, T>
         return this + other;
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly Vector4<T> ComponentDivide(Vector4<T> other) {
-        return new(X / other.X, Y / other.Y, Z / other.Z, W / other.W);
+        return ComponentDivide(this, other);
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly Vector4<T> ComponentMultiply(Vector4<T> other) {
-        return new(X * other.X, Y * other.Y, Z * other.Z, W * other.W);
+        return ComponentMultiply(this, other);
         }
 
-    public readonly void Deconstruct(out T X, out T Y, out T Z, out T W) {
-        X = this.X; Y = this.Y; Z = this.Z; W = this.W;
+    public readonly void Deconstruct(out T x, out T y, out T z, out T w) {
+        x = this.X; y = this.Y; z = this.Z; w = this.W;
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly bool Equals(Vector4<T> other) {
-        return X == other.X && Y == other.Y && Z == other.Z && W == other.W;
+        return X == other.X
+            && Y == other.Y
+            && Z == other.Z
+            && W == other.W;
         }
 
     public override readonly bool Equals(object? obj) {
@@ -694,9 +835,10 @@ public struct Vector4<T> : IFloatingPointVector<Vector4<T>, T>
     public readonly Vector2<T> ZW => new(Z, W);
     public readonly Vector2<T> WW => new(W, W);
 
-    #endregion
+    #endregion Vector2 Swizzles
 
     #region Vector3 Swizzles
+
     public readonly Vector3<T> XXX => new(X, X, X);
     public readonly Vector3<T> YXX => new(Y, X, X);
     public readonly Vector3<T> ZXX => new(Z, X, X);

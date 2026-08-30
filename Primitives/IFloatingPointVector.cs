@@ -4,13 +4,8 @@ namespace Bunnarium.Maths.Primitives;
 /// </summary>
 public interface IFloatingPointVector<TVector, T>
     : IVector<TVector, T>
-    where TVector
-    : unmanaged
-    , IFloatingPointVector<TVector, T>
-    where T
-    : unmanaged
-    , IFloatingPoint<T>
-    , IMinMaxValue<T> {
+    where TVector : unmanaged, IFloatingPointVector<TVector, T>
+    where T : unmanaged, IFloatingPoint<T>, IMinMaxValue<T> {
 
     #region Ceiling & Floor
 

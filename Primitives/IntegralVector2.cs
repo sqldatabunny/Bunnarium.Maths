@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using static Bunnarium.Tools.Extensions;
+
 namespace Bunnarium.Maths.Primitives;
 
 /// <summary> A container for two integer values, X and Y. Useful for a variety of purposes, a vector may represent a coordinate, a two-part value, an offset, or a classical vector with a direction and a <see cref="Magnitude">magnitude</see>.
@@ -19,13 +20,10 @@ public struct IntegralVector2<T> : IIntegralVector<IntegralVector2<T>, T>
     /// cref="DocStrings.VectorComponentY"/>
     public T Y { readonly get; set; }
 
-    public readonly void Deconstruct(out T X, out T Y) {
-        X = this.X;
-        Y = this.Y;
-        }
-
     #region Constructors and Factories
 
+    /// <param name="x">The vector's X component.</param>
+    /// <param name="y">The vector's Y component.</param>
     public IntegralVector2(T x, T y) {
         X = x;
         Y = y;
@@ -38,7 +36,7 @@ public struct IntegralVector2<T> : IIntegralVector<IntegralVector2<T>, T>
         }
 
     public static IntegralVector2<T> Create(T value) {
-        return new(value, value);
+        return new(value);
         }
 
     #endregion Constructors and Factories
@@ -52,7 +50,6 @@ public struct IntegralVector2<T> : IIntegralVector<IntegralVector2<T>, T>
     public static IntegralVector2<T> MaxValue { get; } = IntegralVector2<T>.Create(T.MaxValue);
     public static IntegralVector2<T> MinValue { get; } = IntegralVector2<T>.Create(T.MinValue);
     public static IntegralVector2<T> One { get; } = new(T.One, T.One);
-
     public static IntegralVector2<T> Right { get; } = new(T.One, T.Zero);
     public static unsafe int SizeOf { get; } = sizeof(T) * Length;
     public static IntegralVector2<T> Up { get; } = new(T.Zero, T.One);
@@ -82,21 +79,25 @@ public struct IntegralVector2<T> : IIntegralVector<IntegralVector2<T>, T>
 
     #region Comparability
 
+    [BunnyAttributes.SIMDCandidate]
     public static bool operator <(in IntegralVector2<T> left, in IntegralVector2<T> right) {
         return left.X < right.X
             && left.Y < right.Y;
         }
 
+    [BunnyAttributes.SIMDCandidate]
     public static bool operator <=(in IntegralVector2<T> left, in IntegralVector2<T> right) {
         return left.X <= right.X
             && left.Y <= right.Y;
         }
 
+    [BunnyAttributes.SIMDCandidate]
     public static bool operator >(in IntegralVector2<T> left, in IntegralVector2<T> right) {
         return left.X > right.X
             && left.Y > right.Y;
         }
 
+    [BunnyAttributes.SIMDCandidate]
     public static bool operator >=(in IntegralVector2<T> left, in IntegralVector2<T> right) {
         return left.X >= right.X && left.Y >= right.Y;
         }
@@ -362,6 +363,7 @@ public struct IntegralVector2<T> : IIntegralVector<IntegralVector2<T>, T>
         return left + right;
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IntegralVector2<T> ComponentDivide(IntegralVector2<T> left, IntegralVector2<T> right) {
         return new(
             x: left.X / right.X,
@@ -369,6 +371,7 @@ public struct IntegralVector2<T> : IIntegralVector<IntegralVector2<T>, T>
             );
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IntegralVector2<T> ComponentMultiply(IntegralVector2<T> left, IntegralVector2<T> right) {
         return new(
             x: left.X * right.X,
@@ -376,6 +379,12 @@ public struct IntegralVector2<T> : IIntegralVector<IntegralVector2<T>, T>
             );
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static implicit operator IntegralVector2<T>((T X, T Y) tuple) {
+        return new(tuple.X, tuple.Y);
+        }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IntegralVector2<T> operator -(IntegralVector2<T> left, IntegralVector2<T> right) {
         return new(
             x: left.X - right.X,
@@ -383,10 +392,12 @@ public struct IntegralVector2<T> : IIntegralVector<IntegralVector2<T>, T>
             );
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator !=(IntegralVector2<T> left, IntegralVector2<T> right) {
-        return left.Equals(right) == false;
+        return (left == right) == false;
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IntegralVector2<T> operator *(IntegralVector2<T> vector, T value) {
         return new(
             x: vector.X * value,
@@ -394,13 +405,12 @@ public struct IntegralVector2<T> : IIntegralVector<IntegralVector2<T>, T>
             );
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IntegralVector2<T> operator *(T value, IntegralVector2<T> vector) {
-        return new(
-            x: vector.X * value,
-            y: vector.Y * value
-            );
+        return vector * value;
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IntegralVector2<T> operator /(IntegralVector2<T> vector, T value) {
         return new(
             x: vector.X / value,
@@ -408,6 +418,7 @@ public struct IntegralVector2<T> : IIntegralVector<IntegralVector2<T>, T>
             );
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IntegralVector2<T> operator /(T value, IntegralVector2<T> vector) {
         return new(
             x: value / vector.X,
@@ -415,6 +426,7 @@ public struct IntegralVector2<T> : IIntegralVector<IntegralVector2<T>, T>
             );
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IntegralVector2<T> operator +(IntegralVector2<T> left, IntegralVector2<T> right) {
         return new(
             x: left.X + right.X,
@@ -422,8 +434,10 @@ public struct IntegralVector2<T> : IIntegralVector<IntegralVector2<T>, T>
             );
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(IntegralVector2<T> left, IntegralVector2<T> right) {
-        return left.Equals(right);
+        return left.X == right.X
+            && left.Y == right.Y;
         }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -436,24 +450,25 @@ public struct IntegralVector2<T> : IIntegralVector<IntegralVector2<T>, T>
         return this + other;
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly IntegralVector2<T> ComponentDivide(IntegralVector2<T> other) {
-        return new(
-            x: X / other.X,
-            y: Y / other.Y
-            );
+        return ComponentDivide(this, other);
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly IntegralVector2<T> ComponentMultiply(IntegralVector2<T> other) {
-        return new(
-            x: X * other.X,
-            y: Y * other.Y
-            );
+        return ComponentMultiply(this, other);
         }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly void Deconstruct(out T X, out T Y) {
+        X = this.X;
+        Y = this.Y;
+        }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly bool Equals(IntegralVector2<T> other) {
-        return
-            (X == other.X) &&
-            (Y == other.Y);
+        return this == other;
         }
 
     public override readonly bool Equals(object? obj) {
