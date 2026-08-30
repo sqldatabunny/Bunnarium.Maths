@@ -17,3 +17,9 @@ I did my best to guarantee accuracy and consistency in this library, but it is a
 * A bundle of SIMD helpers!
 
 ⚠️ This library is subject to revisions! Breaking changes will be minimized, but changes such as member promotions up interface chains *may* be disruptive depending on how you use this library.
+
+## Instructions
+
+* To set matrix handedness, apply one of MATRIX_LEFTHANDED_COORDINATE_SYSTEM and MATRIX_RIGHTHANDED_COORDINATE_SYSTEM. Exactly one of these must be set!
+* To set matrix multiplication convention, apply one of MATRIX_PREMULTIPLIED_CONVENTION and MATRIX_POSTMULTIPLIED_CONVENTION. Again, exactly one of these must be set!
+* These symbols will apply to matrix types such as Matrix4. To access convention- or handedness-specific function, use the specified APIs in the static Matrix library (Matrix.cs).
