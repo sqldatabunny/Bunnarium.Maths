@@ -1,59 +1,76 @@
-﻿using System.Runtime.CompilerServices;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
+
 using X86 = System.Runtime.Intrinsics.X86;
 
 namespace Bunnarium.Tools.Utilities;
+
 public static unsafe partial class SIMD {
-
-    #region Experimental
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector256<float> Cross4x(Vector256<float> a, Vector256<float> b) {
-        var m = a * Vector256.Shuffle(b, Vector256.Create(1, 0, 3, 2, 5, 4, 7, 6))
-                  * Vector256.Create(Vector128.Create(1f, -1f, 1f, -1f));
-        return PairwiseAdd(m, m);
-        }
-
-    #endregion
 
     #region Vectors
 
+    /// <summary><c>(+0, +0, -0, -0)</c>
+    /// </summary>
     private static readonly Vector128<float> BoxSignMask128
         = Vector128.Create(+0f, +0f, -0f, -0f);
 
+    /// <inheritdoc
+    /// cref="BoxSignMask128"/>
     private static readonly Vector128<int> BoxSignMask128Int
         = Vector128.Create(+0, +0, -0, -0);
 
+    /// <inheritdoc
+    /// cref="BoxSignMask128"/>
     private static readonly Vector256<double> BoxSignMask256
     = Vector256.Create(+0d, +0d, -0d, -0d);
 
+    /// <inheritdoc
+    /// cref="BoxSignMask128"/>
     private static readonly Vector256<long> BoxSignMask256Int
         = Vector256.Create(+0L, +0L, -0L, -0L);
 
+    /// <inheritdoc
+    /// cref="Half128F"/>
     private static readonly Vector128<double> Half128D
         = Vector128.Create(0.5);
 
+    /// <summary><c>(0.5, 0.5, 0.5, 0.5)</c>
+    /// </summary>
     private static readonly Vector128<float> Half128F
         = Vector128.Create(0.5f);
 
+    /// <inheritdoc
+    /// cref="Half128F"/>
     private static readonly Vector256<double> Half256D
-                                = Vector256.Create(0.5);
+        = Vector256.Create(0.5);
+
+    /// <inheritdoc
+    /// cref="Half128F"/>
     private static readonly Vector64<float> Half64F
         = Vector64.Create(0.5f);
 
+    /// <summary><c>(-0, -0, +0, +0)</c>
+    /// </summary>
     private static readonly Vector128<float> MinMaxSignMask128
         = Vector128.Create(-0.0f, -0.0f, +0.0f, +0.0f);
 
+    /// <inheritdoc
+    /// cref="MinMaxSignMask128"/>
     private static readonly Vector128<int> MinMaxSignMask128Int
         = Vector128.Create(-0, -0, +0, +0);
 
+    /// <inheritdoc
+    /// cref="MinMaxSignMask128"/>
     private static readonly Vector256<double> MinMaxSignMask256
         = Vector256.Create(-0.0, -0.0, +0.0, +0.0);
 
+    /// <inheritdoc
+    /// cref="MinMaxSignMask128"/>
     private static readonly Vector256<long> MinMaxSignMask256Int
-            = Vector256.Create(-0L, -0L, +0L, +0L);
+        = Vector256.Create(-0L, -0L, +0L, +0L);
 
     #endregion Vectors
 
@@ -110,6 +127,15 @@ public static unsafe partial class SIMD {
             );
         }
 
+    /// <summary> Returns <c>(<paramref name="a"/>.AB × <paramref name="b"/>.AB, <paramref name="a"/>.CD × <paramref name="b"/>.CD, <paramref name="a"/>.EF × <paramref name="b"/>.EF, <paramref name="a"/>.GH × <paramref name="b"/>.GH, ... repeated across the upper half)</c>
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector256<float> Cross4x(Vector256<float> a, Vector256<float> b) {
+        var m = a * Vector256.Shuffle(b, Vector256.Create(1, 0, 3, 2, 5, 4, 7, 6))
+                  * Vector256.Create(Vector128.Create(1f, -1f, 1f, -1f));
+        return PairwiseAdd(m, m);
+        }
+
     #endregion Cross Product (2D)
 
     #region Cross Product (3D)
@@ -117,7 +143,6 @@ public static unsafe partial class SIMD {
     /// <summary> Returns <c>(<paramref name="a"/> × <paramref name="b"/>)</c>
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [BunnyAttributes.Citation("https://geometrian.com/resources/cross_product/")]
     public static Vector128<float> Cross3D(Vector128<float> a, Vector128<float> b) {
         var vec0 = Vector128.Shuffle(a, Vector128.Create(1, 2, 0, 3));
         var vec1 = Vector128.Shuffle(b, Vector128.Create(2, 0, 1, 3));
@@ -128,7 +153,6 @@ public static unsafe partial class SIMD {
     /// <inheritdoc
     /// cref="Cross3D(Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [BunnyAttributes.Citation("https://geometrian.com/resources/cross_product/")]
     public static Vector256<double> Cross3D(Vector256<double> a, Vector256<double> b) {
         var vec0 = Vector256.Shuffle(a, Vector256.Create(1L, 2L, 0L, 3L));
         var vec1 = Vector256.Shuffle(b, Vector256.Create(2L, 0L, 1L, 3L));
@@ -140,6 +164,8 @@ public static unsafe partial class SIMD {
 
     #region Dot Products
 
+    /// <summary> Returns <c>(a ⋅ b)</c>
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double Dot(Vector128<double> a, Vector128<double> b) {
         return Vector128.Sum(a * b);
@@ -153,7 +179,7 @@ public static unsafe partial class SIMD {
         return PairwiseAdd(m, m);
         }
 
-    /// <summary>Returns <c>(Dot(<paramref name="a"/>.XY, <paramref name="b"/>.XY), Dot(<paramref name="a"/>.ZW, <paramref name="b"/>.ZW), Dot(<paramref name="a"/>.XY, <paramref name="b"/>.XY), Dot(<paramref name="a"/>.ZW, <paramref name="b"/>.ZW))
+    /// <summary>Returns <c>(<paramref name="a"/>.XY ⋅ <paramref name="b"/>.XY, <paramref name="a"/>.ZW ⋅ <paramref name="b"/>.ZW, <paramref name="a"/>.XY ⋅ <paramref name="b"/>.XY, <paramref name="a"/>.ZW ⋅ <paramref name="b"/>.ZW)
     /// </c>
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -161,10 +187,13 @@ public static unsafe partial class SIMD {
         var m = a * b;
         return PairwiseAdd(m, m);
         }
+
     #endregion Dot Products
 
     #region Conversions - Centerpoint/HalfLengths → Min/Max (2D)
 
+    /// <summary> A SIMD function converting a 2D representation of an AABB, represented by a centerpoint and the box's half lengths, to the same box represented by its minimum XY coordinate and its maximum XY coordinate.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector128<float> ToMinMax(in Vector128<float> centerpointHalfLengths) {
         return ToMinMax(
@@ -173,6 +202,8 @@ public static unsafe partial class SIMD {
             );
         }
 
+    /// <inheritdoc
+    /// cref="ToMinMax(in Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector256<double> ToMinMax(in Vector256<double> centerpointHalfLengths) {
         return ToMinsMaxs(
@@ -181,6 +212,8 @@ public static unsafe partial class SIMD {
             );
         }
 
+    /// <inheritdoc
+    /// cref="ToMinMax(in Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector256<double> ToMinMax(in Vector128<double> centerpoint, in Vector128<double> halfLengths) {
         return ToMinsMaxs(
@@ -189,70 +222,63 @@ public static unsafe partial class SIMD {
             );
         }
 
+    /// <inheritdoc
+    /// cref="ToMinMax(in Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector128<float> ToMinMax(in Vector128<float> centers, in Vector128<float> halfDims) {
-        if (Sse.IsSupported) {
-            return Sse.Add(centers, Sse.Xor(halfDims, MinMaxSignMask128));
-            }
-        else if (AdvSimd.IsSupported) {
-            return AdvSimd.Add(centers, AdvSimd.Xor(halfDims.AsInt32(), MinMaxSignMask128.AsInt32()).AsSingle());
-            }
-        else {
-            return centers + Vector128.Xor(halfDims, MinMaxSignMask128);
-            }
+        return centers + Vector128.Xor(halfDims, MinMaxSignMask128);
         }
 
+    /// <inheritdoc
+    /// cref="ToMinMax(in Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector256<double> ToMinMax(double radius) {
         return Vector256.Xor(Vector256.Create(radius), MinMaxSignMask256);
         }
 
+    /// <inheritdoc
+    /// cref="ToMinMax(in Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector128<float> ToMinMax(float radius) {
         return Vector128.Xor(Vector128.Create(radius), MinMaxSignMask128);
         }
 
+    /// <summary> A SIMD function converting two 2D representations of an AABBs, represented by two consecutive centerpoints and half lengths, to the same boxes' represented by their minimum XY coordinates and their maximum XY coordinates.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector256<float> ToMinsMaxs(in Vector128<float> centers, in Vector128<float> halfDims) {
-        Vector128<float> minMax128;
-        if (Sse.IsSupported) {
-            minMax128 = Sse.Add(centers, Sse.Xor(halfDims, MinMaxSignMask128));
-            }
-        else if (AdvSimd.IsSupported) {
-            minMax128 = AdvSimd.Add(centers, AdvSimd.Xor(halfDims.AsInt32(), MinMaxSignMask128.AsInt32()).AsSingle());
-            }
-        else {
-            minMax128 = centers + Vector128.Xor(halfDims, MinMaxSignMask128);
-            }
-        return Vector256.Create(minMax128);
+        return Vector256.Create(centers + Vector128.Xor(halfDims, MinMaxSignMask128));
         }
 
+    /// <inheritdoc
+    /// cref="ToMinsMaxs(in Vector128{float}, in Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector256<double> ToMinsMaxs(in Vector256<double> centers, in Vector256<double> halfDims) {
-        if (Avx.IsSupported) {
-            return Avx.Add(centers, Avx.Xor(halfDims, MinMaxSignMask256));
-            }
-        else {
-            return centers + Vector256.Xor(halfDims, MinMaxSignMask256);
-            }
+        return centers + Vector256.Xor(halfDims, MinMaxSignMask256);
         }
 
     #endregion Conversions - Centerpoint/HalfLengths → Min/Max (2D)
 
     #region Conversions - Min/Max → Centerpoint/HalfLengths (2D)
 
+    /// <inheritdoc
+    /// cref="ToCenterpointHalfLengths(in Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ToCenterpointHalfLengths(in Vector64<float> min, in Vector64<float> max, out Vector64<float> centerpoint, out Vector64<float> halfLengths) {
         centerpoint = (min + max) * Half64F;
         halfLengths = (max - min) * Half64F;
         }
 
+    /// <inheritdoc
+    /// cref="ToCenterpointHalfLengths(in Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ToCenterpointHalfLengths(in Vector128<double> min, in Vector128<double> max, out Vector128<double> centerpoint, out Vector128<double> halfLengths) {
         centerpoint = (min + max) * Half128D;
         halfLengths = (max - min) * Half128D;
         }
 
+    /// <inheritdoc
+    /// cref="ToCenterpointHalfLengths(in Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ToCenterpointHalfLengths(in Vector256<double> minMax, out Vector128<double> centerpoint, out Vector128<double> halfLengths) {
         var min = minMax.GetLower();
@@ -261,6 +287,8 @@ public static unsafe partial class SIMD {
         halfLengths = (max - min) * Half128D;
         }
 
+    /// <summary> A SIMD function converting a 2D representation of an AABB, represented by minimum and maximum XY coordinates, to the same box represented by its centerpoint and its half lengths.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector128<float> ToCenterpointHalfLengths(in Vector128<float> minMax) {
         return StridedAdd(
@@ -272,6 +300,8 @@ public static unsafe partial class SIMD {
             ) * Half128F;
         }
 
+    /// <inheritdoc
+    /// cref="ToCenterpointHalfLengths(in Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector256<double> ToCenterpointHalfLengths(in Vector256<double> minMax) {
         return StridedAdd(
@@ -283,11 +313,15 @@ public static unsafe partial class SIMD {
             ) * Half256D;
         }
 
+    /// <inheritdoc
+    /// cref="ToCenterpointHalfLengths(in Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ToCenterpointHalfLengths(in Vector128<float> minMax, out Vector128<float> centerpointHalfLengths) {
         centerpointHalfLengths = ToCenterpointHalfLengths(in minMax);
         }
 
+    /// <inheritdoc
+    /// cref="ToCenterpointHalfLengths(in Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ToCenterpointHalfLengths(in Vector256<double> minMax, out Vector256<double> centerpointHalfLengths) {
         centerpointHalfLengths = ToCenterpointHalfLengths(in minMax);
@@ -297,6 +331,8 @@ public static unsafe partial class SIMD {
 
     #region MinMax - Contains Other Min/Max
 
+    /// <summary> Returns whether the 2D box represented by the first <paramref name="minMax"/> extents contains (including overlapping edges) the <paramref name="other"/> box.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsComparison(Vector128<float> minMax, Vector128<float> other) {
         if (Vector256.IsHardwareAccelerated && Vector256<float>.IsSupported) {
@@ -310,6 +346,8 @@ public static unsafe partial class SIMD {
             }
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsComparison(Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsComparison(Vector256<double> minMax, Vector256<double> other) {
         return (Vector256.LessThanOrEqual(minMax, other).ExtractMostSignificantBits() & 0b_0011) == 0b_0011
@@ -320,6 +358,8 @@ public static unsafe partial class SIMD {
 
     #region MinMax - Contains Other Min/Max Without Intersecting
 
+    /// <summary> Returns whether the 2D box represented by the first <paramref name="minMax"/> extents fully contains (excluding overlapping edges) the <paramref name="other"/> box.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsComparisonWithoutIntersecting(Vector128<float> minMax, Vector128<float> other) {
         if (Vector256.IsHardwareAccelerated && Vector256<float>.IsSupported) {
@@ -333,6 +373,8 @@ public static unsafe partial class SIMD {
             }
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsComparisonWithoutIntersecting(Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsComparisonWithoutIntersecting(Vector256<double> minMax, Vector256<double> other) {
         return (Vector256.LessThan(minMax, other).ExtractMostSignificantBits() & 0b_0011) == 0b_0011
@@ -343,6 +385,8 @@ public static unsafe partial class SIMD {
 
     #region MinMax - Contains Point
 
+    /// <summary> Returns whether the 2D box represented by its minimum and maximum extents contains a <paramref name="point"/> (including points on the box's edges).
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoint(in Vector128<double> min, in Vector128<double> max, in Vector128<double> point) {
         return Vector128.BitwiseAnd(
@@ -351,6 +395,8 @@ public static unsafe partial class SIMD {
             ).ExtractMostSignificantBits() == 0b_11;
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPoint(in Vector128{double}, in Vector128{double}, in Vector128{double})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoint(in Vector64<float> min, in Vector64<float> max, in Vector64<float> point) {
         return Vector64.BitwiseAnd(
@@ -363,6 +409,9 @@ public static unsafe partial class SIMD {
 
     #region MinMax - Contains Points
 
+    /// <param name="boxMin">The box's minimum coordinate.</param>
+    /// <param name="boxMax">The box's maximum coordinate.</param>
+    /// <inheritdoc cref="MinMaxContainsPoints(Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoints(Vector128<double> boxMin, Vector128<double> boxMax, Vector128<double> a, Vector128<double> b, Vector128<double> c, Vector128<double> d) {
         if (Vector128.GreaterThanAny(boxMin, a) || Vector128.GreaterThanAny(boxMin, b) || Vector128.GreaterThanAny(boxMin, c) || Vector128.GreaterThanAny(boxMin, d))
@@ -373,6 +422,8 @@ public static unsafe partial class SIMD {
             && Vector128.GreaterThanOrEqualAll(boxMax, d);
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPoints(Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoints(Vector128<double> boxMin, Vector128<double> boxMax, Vector128<double> a, Vector128<double> b, Vector128<double> c) {
         if (Vector128.GreaterThanAny(boxMin, a) || Vector128.GreaterThanAny(boxMin, b) || Vector128.GreaterThanAny(boxMin, c))
@@ -382,6 +433,8 @@ public static unsafe partial class SIMD {
             && Vector128.GreaterThanOrEqualAll(boxMax, c);
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPoints(Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoints(Vector128<double> boxMin, Vector128<double> boxMax, Vector128<double> a, Vector128<double> b) {
         if (Vector128.GreaterThanAny(boxMin, a) || Vector128.GreaterThanAny(boxMin, b))
@@ -390,6 +443,8 @@ public static unsafe partial class SIMD {
             && Vector128.GreaterThanOrEqualAll(boxMax, b);
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPoints(Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoints(Vector64<float> boxMin, Vector64<float> boxMax, Vector64<float> a, Vector64<float> b, Vector64<float> c, Vector64<float> d) {
         if (Vector64.GreaterThanAny(boxMin, a) || Vector64.GreaterThanAny(boxMin, b) || Vector64.GreaterThanAny(boxMin, c) || Vector64.GreaterThanAny(boxMin, d))
@@ -400,6 +455,8 @@ public static unsafe partial class SIMD {
             && Vector64.GreaterThanOrEqualAll(boxMax, d);
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPoints(Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoints(Vector64<float> boxMin, Vector64<float> boxMax, Vector64<float> a, Vector64<float> b, Vector64<float> c) {
         if (Vector64.GreaterThanAny(boxMin, a) || Vector64.GreaterThanAny(boxMin, b) || Vector64.GreaterThanAny(boxMin, c))
@@ -409,6 +466,8 @@ public static unsafe partial class SIMD {
             && Vector64.GreaterThanOrEqualAll(boxMax, c);
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPoints(Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoints(Vector64<float> boxMin, Vector64<float> boxMax, Vector64<float> a, Vector64<float> b) {
         if (Vector64.GreaterThanAny(boxMin, a) || Vector64.GreaterThanAny(boxMin, b))
@@ -417,6 +476,8 @@ public static unsafe partial class SIMD {
             && Vector64.GreaterThanOrEqualAll(boxMax, b);
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPoints(Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoints(Vector128<float> minMax, Vector128<float> a, Vector128<float> b) {
         var signs = Vector128.Create(+0.0f, +0.0f, -0.0f, -0.0f);
@@ -429,6 +490,8 @@ public static unsafe partial class SIMD {
                     Vector128.LessThanOrEqual(mm, bx))) == 0b_1111;
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPoints(Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoints(Vector128<float> minMax, Vector128<float> a, Vector128<float> b, Vector128<float> c) {
         var signs = Vector128.Create(+0.0f, +0.0f, -0.0f, -0.0f);
@@ -443,6 +506,13 @@ public static unsafe partial class SIMD {
                     Vector128.LessThanOrEqual(mm, cx))) == 0b_1111;
         }
 
+    /// <summary> Returns whether the 2D box represented by its minimum and maximum extents contains all of the given points (including points on the box's edges).
+    /// </summary>
+    /// <param name="minMax">The box's minimum and maximum extents.</param>
+    /// <param name="a">The first point to test.</param>
+    /// <param name="b">The second point to test.</param>
+    /// <param name="c">The third point to test.</param>
+    /// <param name="d">The fourth point to test.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoints(Vector128<float> minMax, Vector128<float> a, Vector128<float> b, Vector128<float> c, Vector128<float> d) {
         var signs = Vector128.Create(+0.0f, +0.0f, -0.0f, -0.0f);
@@ -462,6 +532,8 @@ public static unsafe partial class SIMD {
                         )).ExtractMostSignificantBits() == 0b_1111;
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPoints(Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoints(Vector256<double> minMax, Vector256<double> a, Vector256<double> b, Vector256<double> c, Vector256<double> d) {
         var signs = Vector256.Create(+0.0, +0.0, -0.0, -0.0);
@@ -481,6 +553,8 @@ public static unsafe partial class SIMD {
                         )).ExtractMostSignificantBits() == 0b_1111;
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPoints(Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoints(Vector256<double> minMax, Vector256<double> a, Vector256<double> b) {
         var signs = Vector256.Create(+0.0, +0.0, -0.0, -0.0);
@@ -493,6 +567,8 @@ public static unsafe partial class SIMD {
                     Vector256.LessThanOrEqual(mm, bx))) == 0b_1111;
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPoints(Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPoints(Vector256<double> minMax, Vector256<double> a, Vector256<double> b, Vector256<double> c) {
         var signs = Vector256.Create(+0.0, +0.0, -0.0, -0.0);
@@ -511,6 +587,8 @@ public static unsafe partial class SIMD {
 
     #region MinMax - Contains Point Without Intersecting
 
+    /// <summary> Returns whether the 2D box represented by its minimum and maximum extents contains a <paramref name="point"/> (excluding points on the box's edges).
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointWithoutIntersecting(in Vector128<double> min, in Vector128<double> max, in Vector128<double> point) {
         return Vector128.BitwiseAnd(
@@ -519,6 +597,8 @@ public static unsafe partial class SIMD {
             ).ExtractMostSignificantBits() == 0b_11;
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPointWithoutIntersecting(in Vector128{double}, in Vector128{double}, in Vector128{double})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointWithoutIntersecting(in Vector64<float> min, in Vector64<float> max, in Vector64<float> point) {
         return Vector64.BitwiseAnd(
@@ -531,6 +611,9 @@ public static unsafe partial class SIMD {
 
     #region MinMax - Contains Points Without Intersecting
 
+    /// <param name="boxMin">The box's minimum coordinate.</param>
+    /// <param name="boxMax">The box's maximum coordinate.</param>
+    /// <inheritdoc cref="MinMaxContainsPointsWithoutIntersecting(Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointsWithoutIntersecting(Vector128<double> boxMin, Vector128<double> boxMax, Vector128<double> a, Vector128<double> b, Vector128<double> c, Vector128<double> d) {
         if (Vector128.GreaterThanOrEqualAny(boxMin, a) || Vector128.GreaterThanOrEqualAny(boxMin, b) || Vector128.GreaterThanOrEqualAny(boxMin, c) || Vector128.GreaterThanOrEqualAny(boxMin, d))
@@ -541,6 +624,8 @@ public static unsafe partial class SIMD {
             && Vector128.GreaterThanAll(boxMax, d);
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPointsWithoutIntersecting(Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointsWithoutIntersecting(Vector128<double> boxMin, Vector128<double> boxMax, Vector128<double> a, Vector128<double> b, Vector128<double> c) {
         if (Vector128.GreaterThanOrEqualAny(boxMin, a) || Vector128.GreaterThanOrEqualAny(boxMin, b) || Vector128.GreaterThanOrEqualAny(boxMin, c))
@@ -550,6 +635,8 @@ public static unsafe partial class SIMD {
             && Vector128.GreaterThanAll(boxMax, c);
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPointsWithoutIntersecting(Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointsWithoutIntersecting(Vector128<double> boxMin, Vector128<double> boxMax, Vector128<double> a, Vector128<double> b) {
         if (Vector128.GreaterThanOrEqualAny(boxMin, a) || Vector128.GreaterThanOrEqualAny(boxMin, b))
@@ -558,6 +645,8 @@ public static unsafe partial class SIMD {
             && Vector128.GreaterThanAll(boxMax, b);
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPointsWithoutIntersecting(Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointsWithoutIntersecting(Vector64<float> boxMin, Vector64<float> boxMax, Vector64<float> a, Vector64<float> b, Vector64<float> c, Vector64<float> d) {
         if (Vector64.GreaterThanOrEqualAny(boxMin, a) || Vector64.GreaterThanOrEqualAny(boxMin, b) || Vector64.GreaterThanOrEqualAny(boxMin, c) || Vector64.GreaterThanOrEqualAny(boxMin, d))
@@ -568,6 +657,8 @@ public static unsafe partial class SIMD {
             && Vector64.GreaterThanAll(boxMax, d);
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPointsWithoutIntersecting(Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointsWithoutIntersecting(Vector64<float> boxMin, Vector64<float> boxMax, Vector64<float> a, Vector64<float> b, Vector64<float> c) {
         if (Vector64.GreaterThanOrEqualAny(boxMin, a) || Vector64.GreaterThanOrEqualAny(boxMin, b) || Vector64.GreaterThanOrEqualAny(boxMin, c))
@@ -577,6 +668,8 @@ public static unsafe partial class SIMD {
             && Vector64.GreaterThanAll(boxMax, c);
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPointsWithoutIntersecting(Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double}, Vector128{double})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointsWithoutIntersecting(Vector64<float> boxMin, Vector64<float> boxMax, Vector64<float> a, Vector64<float> b) {
         if (Vector64.GreaterThanOrEqualAny(boxMin, a) || Vector64.GreaterThanOrEqualAny(boxMin, b))
@@ -585,6 +678,8 @@ public static unsafe partial class SIMD {
             && Vector64.GreaterThanAll(boxMax, b);
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPointsWithoutIntersecting(Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointsWithoutIntersecting(Vector128<float> minMax, Vector128<float> a, Vector128<float> b) {
         var signs = Vector128.Create(+0.0f, +0.0f, -0.0f, -0.0f);
@@ -597,6 +692,8 @@ public static unsafe partial class SIMD {
                     Vector128.LessThan(mm, bx))) == 0b_1111;
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPointsWithoutIntersecting(Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointsWithoutIntersecting(Vector128<float> minMax, Vector128<float> a, Vector128<float> b, Vector128<float> c) {
         var signs = Vector128.Create(+0.0f, +0.0f, -0.0f, -0.0f);
@@ -611,6 +708,13 @@ public static unsafe partial class SIMD {
                     Vector128.LessThan(mm, cx))) == 0b_1111;
         }
 
+    /// <summary> Returns whether the 2D box represented by its minimum and maximum extents fully contains all of the given points (excluding points on the box's borders).
+    /// </summary>
+    /// <param name="minMax">The box's minimum and maximum extents.</param>
+    /// <param name="a">The first point to test.</param>
+    /// <param name="b">The second point to test.</param>
+    /// <param name="c">The third point to test.</param>
+    /// <param name="d">The fourth point to test.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointsWithoutIntersecting(Vector128<float> minMax, Vector128<float> a, Vector128<float> b, Vector128<float> c, Vector128<float> d) {
         var signs = Vector128.Create(+0.0f, +0.0f, -0.0f, -0.0f);
@@ -630,6 +734,8 @@ public static unsafe partial class SIMD {
                         )).ExtractMostSignificantBits() == 0b_1111;
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPointsWithoutIntersecting(Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointsWithoutIntersecting(Vector256<double> minMax, Vector256<double> a, Vector256<double> b, Vector256<double> c, Vector256<double> d) {
         var signs = Vector256.Create(+0.0, +0.0, -0.0, -0.0);
@@ -649,6 +755,8 @@ public static unsafe partial class SIMD {
                         )).ExtractMostSignificantBits() == 0b_1111;
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPointsWithoutIntersecting(Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointsWithoutIntersecting(Vector256<double> minMax, Vector256<double> a, Vector256<double> b) {
         var signs = Vector256.Create(+0.0, +0.0, -0.0, -0.0);
@@ -661,6 +769,8 @@ public static unsafe partial class SIMD {
                     Vector256.LessThan(mm, bx))) == 0b_1111;
         }
 
+    /// <inheritdoc
+    /// cref="MinMaxContainsPointsWithoutIntersecting(Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float}, Vector128{float})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool MinMaxContainsPointsWithoutIntersecting(Vector256<double> minMax, Vector256<double> a, Vector256<double> b, Vector256<double> c) {
         var signs = Vector256.Create(+0.0, +0.0, -0.0, -0.0);
@@ -777,5 +887,5 @@ public static unsafe partial class SIMD {
         return Vector128.ConditionalSelect(lane, Vector128<float>.One, Vector128<float>.Zero);
         }
 
-    #endregion
+    #endregion Dominance Masks
     }
