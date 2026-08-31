@@ -12,7 +12,7 @@ I did my best to guarantee accuracy and consistency in this library, but it is a
 * Generic Math Support: Create primitives with single, double, or half precision!
 * A framework for creating 2D/3D-agnostic code! (unless you need cross products)
 * Matrix2, 3, 4, 2x3, 3x2, 3x4, and 4x3!
-* Support for selecting a matrix handedness system (i.e., left-handed or right-handed) and a multiplication style (i.e., row-major premultiplication style or column-major postmultiplication), all via compiler symbols!
+* Support for selecting a matrix handedness system (i.e., left-handed or right-handed) and a multiplication style (i.e., row-vector premultiplication style or column-vector postmultiplication), all via compiler symbols!
 * Varying levels of implemented vectorization!
 * A bundle of SIMD helpers!
 
